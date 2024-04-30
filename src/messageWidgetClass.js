@@ -1,7 +1,7 @@
 import iframeResizer from "iframe-resizer/js/iframeResizer";
 
 export class MessageWidget {
-  endpoint = "https://chat-widget-jade.vercel.app";
+  endpoint = "https://widget.angoor.ai";
   settings = {};
   defaultStyles = {
     display: "none",
