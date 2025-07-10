@@ -8,8 +8,8 @@ export class MessageWidget {
     border: "none",
     position: "fixed",
     zIndex: 9999999,
-    bottom: "12px",
-    right: "12px",
+    bottom: "0px",
+    right: "0px",
   };
 
   constructor(settings) {
@@ -45,11 +45,31 @@ export class MessageWidget {
     return iframe;
   }
 
+  sendViewportSize(iframe) {
+    if (iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: "viewport-size",
+        height: window.innerHeight,
+        width: window.innerWidth
+      }, "*");
+    }
+  }
+
   appendFrame(iframe) {
     document.body.appendChild(iframe);
-
-    //start-tracking
-    iframeResizer({ sizeWidth: "true" }, "#widgetFrame");
+    
+    iframe.onload = () => {
+      try {
+        iframeResizer({ 
+          sizeWidth: true,
+          sizeHeight: true,
+        }, "#widgetFrame");
+      } catch (error) {
+      }
+    };
+    setTimeout(() => {
+      this.sendViewportSize(iframe);
+    }, 1000);
   }
 
   setFrameStyles(iframe, styles) {
@@ -59,20 +79,29 @@ export class MessageWidget {
   setMessageListener(iframe) {
     this.messageListener = (event) => {
       if (event.origin === this.endpoint && event.data.type === "init-data") {
-        const { bottom, side } = event.data;
+        // const { bottom, side } = event.data;
         this.setFrameStyles(iframe, {
-          bottom: bottom,
-          right: side,
+          // bottom: bottom,
+          // right: side,
           display: "block",
         });
+        this.sendViewportSize(iframe);
       }
     };
 
+    const handleResize = () => {
+      this.sendViewportSize(iframe);
+    };
+    window.addEventListener('resize', handleResize);
     window.addEventListener("message", this.messageListener);
+    this.resizeHandler = handleResize;
   }
 
   destroy() {
     window.removeEventListener("message", this.messageListener);
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+    }
     const iframe = document.getElementById("widgetFrame");
     if (iframe) {
       iframe.parentNode.removeChild(iframe);
