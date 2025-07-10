@@ -2,6 +2,7 @@ import iframeResizer from "iframe-resizer/js/iframeResizer";
 
 export class MessageWidget {
   endpoint = "https://widget.angoor.ai";
+  // iframeOrigin = null;
   settings = {};
   defaultStyles = {
     display: "none",
@@ -49,19 +50,16 @@ export class MessageWidget {
     if (iframe.contentWindow) {
       const height = window.innerHeight;
       const width = window.innerWidth;
-      console.log("🔵 Parent sending viewport size:", height, width); // Debug
       
       iframe.contentWindow.postMessage({
         type: "viewport-size",
         height: height,
         width: width
-      }, this.endpoint);
+      }, "*");
       iframe.contentWindow.postMessage({
         type: "parent-init",
         hostUrl: window.location.href
-      }, this.endpoint);
-    } else {
-      console.log("❌ iframe.contentWindow is null"); // Debug
+      }, "*");
     }
   }
   
@@ -90,23 +88,19 @@ export class MessageWidget {
 
   setMessageListener(iframe) {
     this.messageListener = (event) => {
-      console.log("🔵 Parent received message:", event.data.type); // Debug
       
       if (event.data.type === "init-data") {
-        console.log("🔵 Processing init-data");
         this.setFrameStyles(iframe, {
           display: "block",
         });
         this.sendViewportSize(iframe);
       }
       if (event.data.type === "iframe-ready") {
-        console.log("🔵 Processing iframe-ready");
         this.sendViewportSize(iframe);
       }
     };
   
     const handleResize = () => {
-      console.log("🔵 Resize event, sending viewport size");
       this.sendViewportSize(iframe);
     };
     window.addEventListener('resize', handleResize);
