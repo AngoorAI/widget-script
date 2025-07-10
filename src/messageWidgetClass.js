@@ -47,13 +47,25 @@ export class MessageWidget {
 
   sendViewportSize(iframe) {
     if (iframe.contentWindow) {
+      const height = window.innerHeight;
+      const width = window.innerWidth;
+      console.log("🔵 Parent sending viewport size:", height, width); // Debug
+      
       iframe.contentWindow.postMessage({
         type: "viewport-size",
-        height: window.innerHeight,
-        width: window.innerWidth
-      }, "*");
+        height: height,
+        width: width
+      }, this.endpoint);
+      iframe.contentWindow.postMessage({
+        type: "parent-init",
+        hostUrl: window.location.href
+      }, this.endpoint);
+    } else {
+      console.log("❌ iframe.contentWindow is null"); // Debug
     }
   }
+  
+  
 
   appendFrame(iframe) {
     document.body.appendChild(iframe);
@@ -69,7 +81,7 @@ export class MessageWidget {
     };
     setTimeout(() => {
       this.sendViewportSize(iframe);
-    }, 1000);
+    }, 100);
   }
 
   setFrameStyles(iframe, styles) {
@@ -78,18 +90,23 @@ export class MessageWidget {
 
   setMessageListener(iframe) {
     this.messageListener = (event) => {
-      if (event.origin === this.endpoint && event.data.type === "init-data") {
-        // const { bottom, side } = event.data;
+      console.log("🔵 Parent received message:", event.data.type); // Debug
+      
+      if (event.data.type === "init-data") {
+        console.log("🔵 Processing init-data");
         this.setFrameStyles(iframe, {
-          // bottom: bottom,
-          // right: side,
           display: "block",
         });
         this.sendViewportSize(iframe);
       }
+      if (event.data.type === "iframe-ready") {
+        console.log("🔵 Processing iframe-ready");
+        this.sendViewportSize(iframe);
+      }
     };
-
+  
     const handleResize = () => {
+      console.log("🔵 Resize event, sending viewport size");
       this.sendViewportSize(iframe);
     };
     window.addEventListener('resize', handleResize);
